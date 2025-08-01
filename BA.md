@@ -286,5 +286,5 @@ Phát triển một RESTful API service để tạo QR code động, hỗ trợ 
 
 **Document Version:** 1.0  
 **Created By:** Senior Business/System Analyst  
-**Review Date:** [Current Date]  
-**Approval Status:** Draft
+**Review Date:** 01-08-2025  
+**Approval Status:** approved
