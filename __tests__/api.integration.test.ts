@@ -135,8 +135,22 @@ describe('QR Code Generator API Integration Tests', () => {
         .post('/v1/create-qr-code')
         .send({ 
           data: 'colored test',
-          color: '#0066ff',
-          bgcolor: '#eeeeee'
+          color: '#000000',  // Black - good contrast with white
+          bgcolor: '#FFFFFF'  // White
+        })
+        .expect(200);
+
+      expect(response.headers['content-type']).toContain('image/png');
+      expect(response.body.length).toBeGreaterThan(0);
+    });
+
+    it('should handle hex colors without # prefix', async () => {
+      const response = await request(server)
+        .post('/v1/create-qr-code')
+        .send({ 
+          data: 'hex test without prefix',
+          color: '000000',    // Black without # prefix
+          bgcolor: 'FFFFFF'   // White without # prefix
         })
         .expect(200);
 
