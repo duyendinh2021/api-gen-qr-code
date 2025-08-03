@@ -6,6 +6,7 @@ import { ColorValue } from '../../domain/valueObjects/ColorValue';
 import { ErrorCorrectionLevelValue } from '../../domain/valueObjects/ErrorCorrectionLevel';
 import { OutputFormatValue } from '../../domain/valueObjects/OutputFormat';
 import { DataPayload } from '../../domain/valueObjects/DataPayload';
+import { Logo } from '../../domain/valueObjects/Logo';
 import { ValidateParametersUseCase } from './ValidateParametersUseCase';
 import { CacheManagementUseCase } from './CacheManagementUseCase';
 import { IQRCodeGenerator, ILogger, IMetricsCollector } from '../ports';
@@ -190,6 +191,10 @@ export class GenerateQRCodeUseCase {
       ? ColorValue.create(request.bgcolor) 
       : ColorValue.white();
 
+    const logo = request.logo 
+      ? Logo.create(request.logo, request.logo_size, request.logo_margin) 
+      : undefined;
+
     return new QRCodeConfiguration({
       data,
       size,
@@ -200,7 +205,8 @@ export class GenerateQRCodeUseCase {
       margin: request.margin,
       quietZone: request.qzone,
       charsetSource: request['charset-source'],
-      charsetTarget: request['charset-target']
+      charsetTarget: request['charset-target'],
+      logo
     });
   }
 

@@ -9,6 +9,9 @@ export interface QRCodeRequestDTO {
   qzone?: number;
   'charset-source'?: string;
   'charset-target'?: string;
+  logo?: string;
+  logo_size?: number;
+  logo_margin?: number;
 }
 
 export interface QRCodeResponseDTO {

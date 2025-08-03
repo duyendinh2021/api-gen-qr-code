@@ -3,6 +3,7 @@ import { ColorValue } from '../valueObjects/ColorValue';
 import { ErrorCorrectionLevelValue } from '../valueObjects/ErrorCorrectionLevel';
 import { OutputFormatValue } from '../valueObjects/OutputFormat';
 import { DataPayload } from '../valueObjects/DataPayload';
+import { Logo } from '../valueObjects/Logo';
 
 export interface QRCodeConfigurationParams {
   data: DataPayload;
@@ -15,6 +16,7 @@ export interface QRCodeConfigurationParams {
   quietZone?: number;
   charsetSource?: string;
   charsetTarget?: string;
+  logo?: Logo;
 }
 
 export class QRCodeConfiguration {
@@ -28,6 +30,7 @@ export class QRCodeConfiguration {
   private readonly quietZone: number;
   private readonly charsetSource: string;
   private readonly charsetTarget: string;
+  private readonly logo?: Logo;
 
   constructor(params: QRCodeConfigurationParams) {
     this.data = params.data;
@@ -40,6 +43,7 @@ export class QRCodeConfiguration {
     this.quietZone = this.validateQuietZone(params.quietZone);
     this.charsetSource = params.charsetSource || 'UTF-8';
     this.charsetTarget = params.charsetTarget || 'UTF-8';
+    this.logo = params.logo;
 
     this.validateConfiguration();
   }
@@ -85,6 +89,23 @@ export class QRCodeConfiguration {
     if (!this.foregroundColor.hasAccessibleContrast(this.backgroundColor)) {
       console.warn('Warning: Color combination may not meet WCAG AA accessibility standards');
     }
+
+    // Validate logo size relative to QR code if logo is present
+    if (this.logo) {
+      this.validateLogoSize();
+    }
+  }
+
+  private validateLogoSize(): void {
+    if (!this.logo) return;
+    
+    const qrCodeSize = Math.min(this.size.getWidth(), this.size.getHeight());
+    const logoSize = this.logo.getSize();
+    const maxLogoSize = qrCodeSize * 0.3; // Max 30% of QR code size
+    
+    if (logoSize > maxLogoSize) {
+      throw new Error(`Logo size (${logoSize}px) is too large. Maximum allowed size is ${Math.floor(maxLogoSize)}px (30% of QR code size)`);
+    }
   }
 
   // Getters
@@ -128,6 +149,14 @@ export class QRCodeConfiguration {
     return this.charsetTarget;
   }
 
+  getLogo(): Logo | undefined {
+    return this.logo;
+  }
+
+  hasLogo(): boolean {
+    return this.logo !== undefined;
+  }
+
   // Utility methods
   equals(other: QRCodeConfiguration): boolean {
     return (
@@ -140,7 +169,9 @@ export class QRCodeConfiguration {
       this.margin === other.margin &&
       this.quietZone === other.quietZone &&
       this.charsetSource === other.charsetSource &&
-      this.charsetTarget === other.charsetTarget
+      this.charsetTarget === other.charsetTarget &&
+      ((this.logo && other.logo && this.logo.equals(other.logo)) || 
+       (!this.logo && !other.logo))
     );
   }
 
@@ -156,13 +187,15 @@ export class QRCodeConfiguration {
       this.margin.toString(),
       this.quietZone.toString(),
       this.charsetSource,
-      this.charsetTarget
+      this.charsetTarget,
+      this.logo ? this.logo.toString() : 'no-logo'
     ];
     
     return Buffer.from(components.join('|')).toString('base64');
   }
 
   toString(): string {
-    return `QRCodeConfiguration{data=${this.data.getLength()} chars, size=${this.size}, format=${this.format}}`;
+    const logoInfo = this.logo ? ` with logo` : '';
+    return `QRCodeConfiguration{data=${this.data.getLength()} chars, size=${this.size}, format=${this.format}${logoInfo}}`;
   }
 }

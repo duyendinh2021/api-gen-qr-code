@@ -5,6 +5,7 @@ import { ColorValue } from '../../domain/valueObjects/ColorValue';
 import { ErrorCorrectionLevelValue } from '../../domain/valueObjects/ErrorCorrectionLevel';
 import { OutputFormatValue } from '../../domain/valueObjects/OutputFormat';
 import { DataPayload } from '../../domain/valueObjects/DataPayload';
+import { Logo } from '../../domain/valueObjects/Logo';
 
 export class ValidateParametersUseCase {
   async execute(request: QRCodeRequestDTO): Promise<ValidationResult> {
@@ -80,11 +81,27 @@ export class ValidateParametersUseCase {
       }
     }
 
+    // Validate logo parameters
+    if (request.logo) {
+      const logoValidation = this.validateLogo(request.logo, request.logo_size, request.logo_margin);
+      if (!logoValidation.isValid()) {
+        errors.push(...logoValidation.getErrors());
+      }
+    }
+
     // Cross-field validations
     if (request.color && request.bgcolor) {
       const contrastValidation = this.validateColorContrast(request.color, request.bgcolor);
       if (!contrastValidation.isValid()) {
         errors.push(...contrastValidation.getErrors());
+      }
+    }
+
+    // Validate logo size relative to QR code size
+    if (request.logo && request.size && request.logo_size) {
+      const logoSizeValidation = this.validateLogoSizeRelativeToQR(request.size, request.logo_size);
+      if (!logoSizeValidation.isValid()) {
+        errors.push(...logoSizeValidation.getErrors());
       }
     }
 
@@ -223,6 +240,42 @@ export class ValidateParametersUseCase {
       return ValidationResult.success();
     } catch (error) {
       // If color parsing fails, it will be caught by individual color validations
+      return ValidationResult.success();
+    }
+  }
+
+  private validateLogo(logo: string, logoSize?: number, logoMargin?: number): ValidationResult {
+    try {
+      Logo.create(logo, logoSize, logoMargin);
+      return ValidationResult.success();
+    } catch (error) {
+      return ValidationResult.single({
+        field: 'logo',
+        message: error instanceof Error ? error.message : 'Invalid logo configuration',
+        type: ValidationErrorType.INVALID_VALUE,
+        value: { logo, logoSize, logoMargin }
+      });
+    }
+  }
+
+  private validateLogoSizeRelativeToQR(qrSize: string, logoSize: number): ValidationResult {
+    try {
+      const size = Size.fromString(qrSize);
+      const qrCodeSize = Math.min(size.getWidth(), size.getHeight());
+      const maxLogoSize = qrCodeSize * 0.3; // Max 30% of QR code size
+      
+      if (logoSize > maxLogoSize) {
+        return ValidationResult.single({
+          field: 'logo_size',
+          message: `Logo size (${logoSize}px) is too large for QR code size (${qrSize}). Maximum allowed size is ${Math.floor(maxLogoSize)}px (30% of QR code size)`,
+          type: ValidationErrorType.CONSTRAINT_VIOLATION,
+          value: { logoSize, qrSize, maxAllowed: Math.floor(maxLogoSize) }
+        });
+      }
+      
+      return ValidationResult.success();
+    } catch (error) {
+      // Size validation will be caught by the size validation method
       return ValidationResult.success();
     }
   }
