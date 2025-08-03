@@ -115,9 +115,9 @@ export class QRCodeJSAdapter implements IQRCodeGenerator {
         })
         .toBuffer();
     } catch (error) {
-      // Fallback: return PNG buffer if Sharp is not available or conversion fails
-      console.warn('JPEG conversion failed, returning PNG:', error);
-      return pngBuffer;
+      // Throw an error if JPEG conversion fails to avoid silent fallback to PNG
+      console.error('JPEG conversion failed:', error);
+      throw new GenerationError('Failed to convert PNG to JPEG: ' + (error instanceof Error ? error.message : String(error)));
     }
   }
 
