@@ -39,7 +39,12 @@ export class ColorValue {
       return ColorValue.parseRGBString(colorInput);
     }
 
-    throw new Error(`Invalid color format: ${colorInput}. Use hex (#RRGGBB) or RGB (r-g-b) format`);
+    // Handle hex format without # prefix (RRGGBB or RGB)
+    if (/^[0-9a-fA-F]{3}$|^[0-9a-fA-F]{6}$/.test(colorInput)) {
+      return ColorValue.parseHexColor('#' + colorInput);
+    }
+
+    throw new Error(`Invalid color format: ${colorInput}. Use hex (#RRGGBB or RRGGBB) or RGB (r-g-b) format`);
   }
 
   private static parseHexColor(hex: string): RGBColor {

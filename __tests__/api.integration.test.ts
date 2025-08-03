@@ -135,8 +135,8 @@ describe('QR Code Generator API Integration Tests', () => {
         .post('/v1/create-qr-code')
         .send({ 
           data: 'colored test',
-          color: '#FF0000',
-          bgcolor: '#FFFFFF'
+          color: '#0066ff',
+          bgcolor: '#eeeeee'
         })
         .expect(200);
 
