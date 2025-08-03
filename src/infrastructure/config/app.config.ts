@@ -70,7 +70,7 @@ export const defaultConfig: AppConfig = {
     maxDataLength: 900,
     defaultFormat: 'png',
     defaultSize: '200x200',
-    allowedFormats: ['png', 'jpg', 'jpeg', 'gif', 'svg', 'eps']
+    allowedFormats: ['png', 'jpg', 'jpeg', 'svg']
   },
   security: {
     helmet: true,
