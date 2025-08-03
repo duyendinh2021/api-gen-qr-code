@@ -1,0 +1,726 @@
+openapi: 3.0.3
+info:
+  title: QR Code Generator API
+  description: |
+    A robust RESTful API for generating QR codes with various customization options. 
+    Built with Clean Architecture principles, featuring comprehensive validation, caching, and monitoring capabilities.
+  version: 1.0.0
+  contact:
+    name: API Support
+    url: https://github.com/duyendinh2021/api-gen-qr-code
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://api.example.com
+    description: Production server
+  - url: http://localhost:3000
+    description: Development server
+
+paths:
+  /create-qr-code:
+    get:
+      summary: Generate QR Code (GET with query parameters)
+      description: Generate a QR code using query parameters. User-friendly endpoint.
+      tags:
+        - QR Code Generation
+      parameters:
+        - name: data
+          in: query
+          required: true
+          description: The data to encode in the QR code
+          schema:
+            type: string
+            maxLength: 900
+            example: "https://example.com"
+        - name: size
+          in: query
+          required: false
+          description: Size in format "WIDTHxHEIGHT"
+          schema:
+            type: string
+            pattern: '^\d+x\d+$'
+            example: "200x200"
+        - name: format
+          in: query
+          required: false
+          description: Output image format
+          schema:
+            type: string
+            enum: [png, jpeg, jpg, gif, svg, eps]
+            default: png
+        - name: color
+          in: query
+          required: false
+          description: Foreground color (hex or RGB format)
+          schema:
+            type: string
+            example: "#000000"
+        - name: bgcolor
+          in: query
+          required: false
+          description: Background color (hex or RGB format)
+          schema:
+            type: string
+            example: "#FFFFFF"
+        - name: ecc
+          in: query
+          required: false
+          description: Error correction level
+          schema:
+            type: string
+            enum: [L, M, Q, H]
+            default: L
+        - name: margin
+          in: query
+          required: false
+          description: Margin in pixels
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 50
+        - name: qzone
+          in: query
+          required: false
+          description: Quiet zone in modules
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 100
+      responses:
+        '200':
+          description: QR code generated successfully
+          headers:
+            X-QR-Code-ID:
+              description: Unique identifier for the generated QR code
+              schema:
+                type: string
+            X-Cache-Status:
+              description: Cache status (HIT or MISS)
+              schema:
+                type: string
+                enum: [HIT, MISS]
+            X-Processing-Time-Ms:
+              description: Processing time in milliseconds
+              schema:
+                type: integer
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            image/gif:
+              schema:
+                type: string
+                format: binary
+            image/svg+xml:
+              schema:
+                type: string
+            application/postscript:
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '413':
+          $ref: '#/components/responses/RequestTooLarge'
+        '429':
+          $ref: '#/components/responses/RateLimitExceeded'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      summary: Generate QR Code (POST with JSON body)
+      description: Generate a QR code with JSON parameters. User-friendly endpoint.
+      tags:
+        - QR Code Generation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QRCodeRequest'
+            examples:
+              simple:
+                summary: Simple QR Code
+                value:
+                  data: "Hello World"
+              url:
+                summary: URL QR Code
+                value:
+                  data: "https://example.com"
+                  size: "200x200"
+                  format: "png"
+              styled:
+                summary: Styled QR Code
+                value:
+                  data: "https://example.com"
+                  size: "300x300"
+                  format: "png"
+                  color: "#2563eb"
+                  bgcolor: "#ffffff"
+                  ecc: "H"
+                  margin: 10
+      responses:
+        '200':
+          description: QR code generated successfully
+          headers:
+            X-QR-Code-ID:
+              description: Unique identifier for the generated QR code
+              schema:
+                type: string
+            X-Cache-Status:
+              description: Cache status (HIT or MISS)
+              schema:
+                type: string
+                enum: [HIT, MISS]
+            X-Processing-Time-Ms:
+              description: Processing time in milliseconds
+              schema:
+                type: integer
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            image/gif:
+              schema:
+                type: string
+                format: binary
+            image/svg+xml:
+              schema:
+                type: string
+            application/postscript:
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '413':
+          $ref: '#/components/responses/RequestTooLarge'
+        '429':
+          $ref: '#/components/responses/RateLimitExceeded'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /v1/create-qr-code:
+    get:
+      summary: Generate QR Code (GET with query parameters) - API v1
+      description: Generate a QR code using query parameters. Versioned API endpoint.
+      tags:
+        - QR Code Generation (v1)
+      parameters:
+        - name: data
+          in: query
+          required: true
+          description: The data to encode in the QR code
+          schema:
+            type: string
+            maxLength: 900
+            example: "https://example.com"
+        - name: size
+          in: query
+          required: false
+          description: Size in format "WIDTHxHEIGHT"
+          schema:
+            type: string
+            pattern: '^\d+x\d+$'
+            example: "200x200"
+        - name: format
+          in: query
+          required: false
+          description: Output image format
+          schema:
+            type: string
+            enum: [png, jpeg, jpg, gif, svg, eps]
+            default: png
+        - name: color
+          in: query
+          required: false
+          description: Foreground color (hex or RGB format)
+          schema:
+            type: string
+            example: "#000000"
+        - name: bgcolor
+          in: query
+          required: false
+          description: Background color (hex or RGB format)
+          schema:
+            type: string
+            example: "#FFFFFF"
+        - name: ecc
+          in: query
+          required: false
+          description: Error correction level
+          schema:
+            type: string
+            enum: [L, M, Q, H]
+            default: L
+        - name: margin
+          in: query
+          required: false
+          description: Margin in pixels
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 50
+        - name: qzone
+          in: query
+          required: false
+          description: Quiet zone in modules
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 100
+      responses:
+        '200':
+          description: QR code generated successfully
+          headers:
+            X-QR-Code-ID:
+              description: Unique identifier for the generated QR code
+              schema:
+                type: string
+            X-Cache-Status:
+              description: Cache status (HIT or MISS)
+              schema:
+                type: string
+                enum: [HIT, MISS]
+            X-Processing-Time-Ms:
+              description: Processing time in milliseconds
+              schema:
+                type: integer
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            image/gif:
+              schema:
+                type: string
+                format: binary
+            image/svg+xml:
+              schema:
+                type: string
+            application/postscript:
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '413':
+          $ref: '#/components/responses/RequestTooLarge'
+        '429':
+          $ref: '#/components/responses/RateLimitExceeded'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      summary: Generate QR Code (POST with JSON body) - API v1
+      description: Generate a QR code with JSON parameters. Versioned API endpoint.
+      tags:
+        - QR Code Generation (v1)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QRCodeRequest'
+      responses:
+        '200':
+          description: QR code generated successfully
+          headers:
+            X-QR-Code-ID:
+              description: Unique identifier for the generated QR code
+              schema:
+                type: string
+            X-Cache-Status:
+              description: Cache status (HIT or MISS)
+              schema:
+                type: string
+                enum: [HIT, MISS]
+            X-Processing-Time-Ms:
+              description: Processing time in milliseconds
+              schema:
+                type: integer
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            image/gif:
+              schema:
+                type: string
+                format: binary
+            image/svg+xml:
+              schema:
+                type: string
+            application/postscript:
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '413':
+          $ref: '#/components/responses/RequestTooLarge'
+        '429':
+          $ref: '#/components/responses/RateLimitExceeded'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /health:
+    get:
+      summary: Basic health check
+      description: Returns basic health status of the API
+      tags:
+        - Health Check
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /health/live:
+    get:
+      summary: Liveness probe
+      description: Liveness probe for container orchestration
+      tags:
+        - Health Check
+      responses:
+        '200':
+          description: Service is alive
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "alive"
+                  timestamp:
+                    type: string
+                    format: date-time
+                  uptime:
+                    type: number
+
+  /health/ready:
+    get:
+      summary: Readiness probe
+      description: Readiness probe for container orchestration
+      tags:
+        - Health Check
+      responses:
+        '200':
+          description: Service is ready
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "ready"
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /metrics:
+    get:
+      summary: Prometheus metrics
+      description: Returns Prometheus-compatible metrics
+      tags:
+        - Monitoring
+      responses:
+        '200':
+          description: Metrics data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetricsResponse'
+
+components:
+  schemas:
+    QRCodeRequest:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: string
+          description: The data to encode in the QR code
+          maxLength: 900
+          example: "https://example.com"
+        size:
+          type: string
+          description: Size in format "WIDTHxHEIGHT"
+          pattern: '^\d+x\d+$'
+          example: "200x200"
+        format:
+          type: string
+          description: Output image format
+          enum: [png, jpeg, jpg, gif, svg, eps]
+          default: png
+        color:
+          type: string
+          description: Foreground color in hex (#RRGGBB) or RGB (r-g-b) format
+          example: "#000000"
+        bgcolor:
+          type: string
+          description: Background color in hex (#RRGGBB) or RGB (r-g-b) format
+          example: "#FFFFFF"
+        ecc:
+          type: string
+          description: Error correction level
+          enum: [L, M, Q, H]
+          default: L
+        margin:
+          type: integer
+          description: Margin in pixels
+          minimum: 0
+          maximum: 50
+        qzone:
+          type: integer
+          description: Quiet zone in modules
+          minimum: 0
+          maximum: 100
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              example: "VALIDATION_ERROR"
+            message:
+              type: string
+              example: "Invalid input parameters"
+            details:
+              type: array
+              items:
+                type: object
+                properties:
+                  field:
+                    type: string
+                  message:
+                    type: string
+                  type:
+                    type: string
+                  value:
+                    oneOf:
+                      - type: string
+                      - type: number
+                      - type: object
+        meta:
+          type: object
+          properties:
+            timestamp:
+              type: string
+              format: date-time
+            requestId:
+              type: string
+            processingTimeMs:
+              type: number
+
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, unhealthy]
+        timestamp:
+          type: string
+          format: date-time
+        uptime:
+          type: number
+        version:
+          type: string
+        services:
+          type: object
+          properties:
+            cache:
+              type: string
+              enum: [available, unavailable]
+            qrGenerator:
+              type: string
+              enum: [available, unavailable]
+            imageProcessor:
+              type: string
+              enum: [available, unavailable]
+        metrics:
+          type: object
+          properties:
+            totalRequests:
+              type: number
+            successRate:
+              type: number
+            averageResponseTime:
+              type: number
+            cacheHitRate:
+              type: number
+
+    MetricsResponse:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        metrics:
+          type: object
+          properties:
+            http_requests_total:
+              type: number
+            http_request_duration_ms:
+              type: object
+              properties:
+                count:
+                  type: number
+                sum:
+                  type: number
+                avg:
+                  type: number
+            qr_codes_generated_total:
+              type: number
+            cache_hits_total:
+              type: number
+            cache_misses_total:
+              type: number
+            errors_total:
+              type: number
+            memory_usage_bytes:
+              type: number
+            cpu_usage_percent:
+              type: number
+
+  responses:
+    BadRequest:
+      description: Bad request - validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            missing_data:
+              summary: Missing required data parameter
+              value:
+                success: false
+                error:
+                  code: "INVALID_REQUEST_STRUCTURE"
+                  message: "Request structure validation failed"
+                  details: ["Missing required parameter: data"]
+                meta:
+                  timestamp: "2025-08-03T12:00:00.000Z"
+                  requestId: "req_1234567890_abcdef12"
+            validation_error:
+              summary: Parameter validation failed
+              value:
+                success: false
+                error:
+                  code: "VALIDATION_ERROR"
+                  message: "Invalid input parameters"
+                  details:
+                    - field: "color_contrast"
+                      message: "Color combination may not meet WCAG AA accessibility standards"
+                      type: "CONSTRAINT_VIOLATION"
+                      value:
+                        color: "#FF0000"
+                        bgcolor: "#FFFFFF"
+                        ratio: 3.998
+                meta:
+                  timestamp: "2025-08-03T12:00:00.000Z"
+                  requestId: "req_1234567890_abcdef12"
+
+    RequestTooLarge:
+      description: Request entity too large
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error:
+              code: "REQUEST_TOO_LARGE"
+              message: "Request size exceeds maximum allowed size"
+              details:
+                maxSize: 1048576
+                actualSize: 2097152
+            meta:
+              timestamp: "2025-08-03T12:00:00.000Z"
+              requestId: "req_1234567890_abcdef12"
+
+    RateLimitExceeded:
+      description: Rate limit exceeded
+      headers:
+        X-RateLimit-Limit:
+          description: Request limit per window
+          schema:
+            type: integer
+        X-RateLimit-Remaining:
+          description: Remaining requests in current window
+          schema:
+            type: integer
+        X-RateLimit-Reset:
+          description: Unix timestamp when limit resets
+          schema:
+            type: integer
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error:
+              code: "RATE_LIMIT_EXCEEDED"
+              message: "Too many requests. Limit: 100 requests per 60 seconds"
+              details:
+                limit: 100
+                windowMs: 60000
+                resetIn: 45
+            meta:
+              timestamp: "2025-08-03T12:00:00.000Z"
+              requestId: "req_1234567890_abcdef12"
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error:
+              code: "INTERNAL_SERVER_ERROR"
+              message: "An unexpected error occurred"
+            meta:
+              timestamp: "2025-08-03T12:00:00.000Z"
+              requestId: "req_1234567890_abcdef12"
+
+  securitySchemes: {}
+
+tags:
+  - name: QR Code Generation
+    description: User-friendly QR code generation endpoints
+  - name: QR Code Generation (v1)  
+    description: Versioned API endpoints for QR code generation
+  - name: Health Check
+    description: Service health and liveness endpoints
+  - name: Monitoring
+    description: Metrics and monitoring endpoints

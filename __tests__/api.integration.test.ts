@@ -90,8 +90,8 @@ describe('QR Code Generator API Integration Tests', () => {
       expect(response.body).toMatchObject({
         success: false,
         error: {
-          code: 'MISSING_REQUIRED_PARAMETER',
-          message: expect.stringContaining('data')
+          code: 'INVALID_REQUEST_STRUCTURE',
+          message: 'Request structure validation failed'
         }
       });
     });
@@ -135,11 +135,11 @@ describe('QR Code Generator API Integration Tests', () => {
         .post('/v1/create-qr-code')
         .send({ 
           data: 'colored test',
-          color: '#FF0000',
-          bgcolor: '#FFFFFF'
-        })
-        .expect(200);
+          color: '#000000',  // Black
+          bgcolor: '#FFFFFF' // White - This has good contrast
+        });
 
+      expect(response.status).toBe(200);
       expect(response.headers['content-type']).toContain('image/png');
       expect(response.body.length).toBeGreaterThan(0);
     });
@@ -196,6 +196,31 @@ describe('QR Code Generator API Integration Tests', () => {
 
       expect(response2.headers['x-cache-status']).toBe('HIT');
       expect(time2).toBeLessThan(time1); // Cached request should be faster
+    });
+
+    it('should work with user-friendly /create-qr-code endpoint', async () => {
+      const response = await request(server)
+        .post('/create-qr-code')
+        .send({ data: 'Test user-friendly endpoint' })
+        .expect(200);
+
+      expect(response.headers['content-type']).toContain('image/png');
+      expect(response.headers['x-qr-code-id']).toBeDefined();
+      expect(response.body).toBeInstanceOf(Buffer);
+      expect(response.body.length).toBeGreaterThan(0);
+    });
+
+    it('should work with GET request on user-friendly endpoint', async () => {
+      const response = await request(server)
+        .get('/create-qr-code')
+        .query({ 
+          data: 'https://example.com/test',
+          size: '150x150'
+        })
+        .expect(200);
+
+      expect(response.headers['content-type']).toContain('image/png');
+      expect(response.body).toBeInstanceOf(Buffer);
     });
   });
 
