@@ -240,7 +240,7 @@ export class GenerateQRCodeUseCase {
       cache: cacheStats,
       generator: {
         capabilities: this.qrCodeGenerator.getCapabilities(),
-        supportedFormats: ['png', 'jpg', 'jpeg', 'gif', 'svg']
+        supportedFormats: ['png', 'jpg', 'jpeg', 'svg']
       }
     };
   }
