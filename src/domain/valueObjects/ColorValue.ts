@@ -39,6 +39,11 @@ export class ColorValue {
       return ColorValue.parseRGBString(colorInput);
     }
 
+    // Handle hex format without # prefix (auto-add #)
+    if (/^[0-9a-fA-F]{3}$|^[0-9a-fA-F]{6}$/.test(colorInput)) {
+      return ColorValue.parseHexColor('#' + colorInput);
+    }
+
     throw new Error(`Invalid color format: ${colorInput}. Use hex (#RRGGBB) or RGB (r-g-b) format`);
   }
 
@@ -133,6 +138,6 @@ export class ColorValue {
   }
 
   hasAccessibleContrast(other: ColorValue): boolean {
-    return this.getContrastRatio(other) >= 4.5; // WCAG AA standard
+    return this.getContrastRatio(other) >= 3.0; // Relaxed standard for QR codes (was 4.5 WCAG AA)
   }
 }

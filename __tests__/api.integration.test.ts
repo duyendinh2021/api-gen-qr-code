@@ -144,6 +144,22 @@ describe('QR Code Generator API Integration Tests', () => {
       expect(response.body.length).toBeGreaterThan(0);
     });
 
+    it('should handle colors without # prefix (problem statement fix)', async () => {
+      // Test the exact case from the problem statement
+      const response = await request(server)
+        .get('/v1/create-qr-code')
+        .query({
+          data: 'https://www.goqr.me',
+          size: '300x300',
+          color: '0066ff',
+          bgcolor: 'eeeeee'
+        })
+        .expect(200);
+
+      expect(response.headers['content-type']).toContain('image/png');
+      expect(response.body.length).toBeGreaterThan(0);
+    });
+
     it('should handle custom size', async () => {
       const response = await request(server)
         .post('/v1/create-qr-code')
