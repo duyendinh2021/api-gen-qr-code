@@ -13,7 +13,7 @@ export class InMemoryCacheRepository implements ICacheRepository {
     hits: 0,
     misses: 0,
     sets: 0,
-    deletes: 0
+    deletes: 0,
   };
 
   constructor(
@@ -26,7 +26,7 @@ export class InMemoryCacheRepository implements ICacheRepository {
 
   async get(key: string): Promise<QRCode | null> {
     const entry = this.cache.get(key);
-    
+
     if (!entry) {
       this.stats.misses++;
       return null;
@@ -46,7 +46,7 @@ export class InMemoryCacheRepository implements ICacheRepository {
   async set(key: string, qrCode: QRCode, ttlSeconds?: number): Promise<void> {
     const ttl = (ttlSeconds || this.defaultTTL) * 1000; // Convert to milliseconds
     const now = Date.now();
-    
+
     // If at max capacity, remove oldest entry
     if (this.cache.size >= this.maxKeys && !this.cache.has(key)) {
       this.evictOldest();
@@ -55,7 +55,7 @@ export class InMemoryCacheRepository implements ICacheRepository {
     const entry: CacheEntry = {
       qrCode,
       expiresAt: now + ttl,
-      createdAt: now
+      createdAt: now,
     };
 
     this.cache.set(key, entry);
@@ -75,7 +75,7 @@ export class InMemoryCacheRepository implements ICacheRepository {
 
   async exists(key: string): Promise<boolean> {
     const entry = this.cache.get(key);
-    
+
     if (!entry) {
       return false;
     }
@@ -99,7 +99,7 @@ export class InMemoryCacheRepository implements ICacheRepository {
       hits: this.stats.hits,
       misses: this.stats.misses,
       keys: this.cache.size,
-      memory: this.calculateMemoryUsage()
+      memory: this.calculateMemoryUsage(),
     };
   }
 
@@ -136,13 +136,13 @@ export class InMemoryCacheRepository implements ICacheRepository {
 
   private calculateMemoryUsage(): number {
     let totalSize = 0;
-    
+
     for (const entry of this.cache.values()) {
       // Approximate memory usage calculation
       totalSize += entry.qrCode.getDataSize();
       totalSize += JSON.stringify(entry.qrCode.toJSON()).length * 2; // Rough estimate for metadata
     }
-    
+
     return totalSize;
   }
 
@@ -151,7 +151,7 @@ export class InMemoryCacheRepository implements ICacheRepository {
       hits: 0,
       misses: 0,
       sets: 0,
-      deletes: 0
+      deletes: 0,
     };
   }
 
@@ -162,9 +162,10 @@ export class InMemoryCacheRepository implements ICacheRepository {
       keys: this.cache.size,
       maxKeys: this.maxKeys,
       memoryUsage: this.calculateMemoryUsage(),
-      hitRate: this.stats.hits + this.stats.misses > 0 
-        ? (this.stats.hits / (this.stats.hits + this.stats.misses)) * 100 
-        : 0
+      hitRate:
+        this.stats.hits + this.stats.misses > 0
+          ? (this.stats.hits / (this.stats.hits + this.stats.misses)) * 100
+          : 0,
     };
   }
 

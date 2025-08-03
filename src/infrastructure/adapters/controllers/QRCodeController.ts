@@ -12,7 +12,7 @@ export class QRCodeController {
   ) {}
 
   async generateQRCode(req: Request, res: Response): Promise<void> {
-    const requestId = req.headers['x-request-id'] as string || 'unknown';
+    const requestId = (req.headers['x-request-id'] as string) || 'unknown';
     const startTime = Date.now();
 
     try {
@@ -20,7 +20,7 @@ export class QRCodeController {
         requestId,
         method: req.method,
         ip: req.ip,
-        userAgent: req.get('User-Agent')
+        userAgent: req.get('User-Agent'),
       });
 
       // Extract parameters from both GET and POST requests
@@ -28,23 +28,23 @@ export class QRCodeController {
 
       // Validate required data parameter
       if (!requestData.data) {
-        this.metricsCollector.incrementCounter('http_requests_total', { 
-          method: req.method, 
-          status: '400', 
-          endpoint: 'create-qr-code' 
+        this.metricsCollector.incrementCounter('http_requests_total', {
+          method: req.method,
+          status: '400',
+          endpoint: 'create-qr-code',
         });
-        
+
         res.status(400).json({
           success: false,
           error: {
             code: 'MISSING_REQUIRED_PARAMETER',
-            message: 'The "data" parameter is required'
+            message: 'The "data" parameter is required',
           },
           meta: {
             timestamp: new Date().toISOString(),
             requestId,
-            version: '1.0.0'
-          }
+            version: '1.0.0',
+          },
         });
         return;
       }
@@ -59,13 +59,13 @@ export class QRCodeController {
           'Content-Length': result.data.size.toString(),
           'X-QR-Code-ID': result.data.id,
           'X-Cache-Status': result.data.cacheHit ? 'HIT' : 'MISS',
-          'X-Processing-Time': `${result.performance?.processingTimeMs}ms`
+          'X-Processing-Time': `${result.performance?.processingTimeMs}ms`,
         });
 
-        this.metricsCollector.incrementCounter('http_requests_total', { 
-          method: req.method, 
-          status: '200', 
-          endpoint: 'create-qr-code' 
+        this.metricsCollector.incrementCounter('http_requests_total', {
+          method: req.method,
+          status: '200',
+          endpoint: 'create-qr-code',
         });
         this.metricsCollector.recordHistogram('http_request_duration_ms', Date.now() - startTime);
 
@@ -74,11 +74,11 @@ export class QRCodeController {
       } else {
         // Handle error response
         const statusCode = this.getErrorStatusCode(result.error?.code);
-        
-        this.metricsCollector.incrementCounter('http_requests_total', { 
-          method: req.method, 
-          status: statusCode.toString(), 
-          endpoint: 'create-qr-code' 
+
+        this.metricsCollector.incrementCounter('http_requests_total', {
+          method: req.method,
+          status: statusCode.toString(),
+          endpoint: 'create-qr-code',
         });
 
         res.status(statusCode).json({
@@ -87,31 +87,30 @@ export class QRCodeController {
           meta: {
             timestamp: new Date().toISOString(),
             requestId,
-            version: '1.0.0'
-          }
+            version: '1.0.0',
+          },
         });
       }
-
     } catch (error) {
       this.logger.error('Unexpected error in QR code generation', error as Error, { requestId });
-      
-      this.metricsCollector.incrementCounter('http_requests_total', { 
-        method: req.method, 
-        status: '500', 
-        endpoint: 'create-qr-code' 
+
+      this.metricsCollector.incrementCounter('http_requests_total', {
+        method: req.method,
+        status: '500',
+        endpoint: 'create-qr-code',
       });
 
       res.status(500).json({
         success: false,
         error: {
           code: 'INTERNAL_SERVER_ERROR',
-          message: 'An unexpected error occurred'
+          message: 'An unexpected error occurred',
         },
         meta: {
           timestamp: new Date().toISOString(),
           requestId,
-          version: '1.0.0'
-        }
+          version: '1.0.0',
+        },
       });
     }
   }
@@ -134,7 +133,7 @@ export class QRCodeController {
       margin: source.margin ? parseInt(source.margin as string, 10) : undefined,
       qzone: source.qzone ? parseInt(source.qzone as string, 10) : undefined,
       'charset-source': source['charset-source'] as string,
-      'charset-target': source['charset-target'] as string
+      'charset-target': source['charset-target'] as string,
     };
   }
 
@@ -158,7 +157,7 @@ export class QRCodeController {
     await this.generateQRCode(req, res);
   }
 
-  // POST endpoint handler  
+  // POST endpoint handler
   async handlePost(req: Request, res: Response): Promise<void> {
     await this.generateQRCode(req, res);
   }
@@ -169,7 +168,7 @@ export class QRCodeController {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Request-ID',
-      'Access-Control-Max-Age': '86400'
+      'Access-Control-Max-Age': '86400',
     });
     res.status(204).send();
   }

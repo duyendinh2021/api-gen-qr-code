@@ -16,7 +16,7 @@ export class ValidationError extends AppError {
     super(message, 'VALIDATION_ERROR', 400);
     this.details = details;
   }
-  
+
   public details?: any;
 }
 
@@ -31,7 +31,7 @@ export class CacheError extends AppError {
     super(message, 'CACHE_ERROR', 500);
     this.operation = operation;
   }
-  
+
   public operation?: string;
 }
 
@@ -40,7 +40,7 @@ export class GenerationError extends AppError {
     super(message, 'GENERATION_ERROR', 500);
     this.cause = cause;
   }
-  
+
   public cause?: Error;
 }
 
@@ -50,7 +50,7 @@ export class RateLimitError extends AppError {
     this.limit = limit;
     this.windowMs = windowMs;
   }
-  
+
   public limit: number;
   public windowMs: number;
 }
@@ -60,6 +60,6 @@ export class ConfigurationError extends AppError {
     super(message, 'CONFIGURATION_ERROR', 400);
     this.field = field;
   }
-  
+
   public field?: string;
 }

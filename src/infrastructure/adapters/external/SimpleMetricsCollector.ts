@@ -41,7 +41,7 @@ export class SimpleMetricsCollector implements IMetricsCollector {
   incrementCounter(name: string, labels?: Record<string, string>): void {
     const metric = this.getOrCreateCounter(name);
     const existingValue = this.findValue(metric.values, labels);
-    
+
     if (existingValue) {
       existingValue.value += 1;
       existingValue.timestamp = Date.now();
@@ -49,7 +49,7 @@ export class SimpleMetricsCollector implements IMetricsCollector {
       metric.values.push({
         value: 1,
         timestamp: Date.now(),
-        labels
+        labels,
       });
     }
 
@@ -58,11 +58,11 @@ export class SimpleMetricsCollector implements IMetricsCollector {
 
   recordHistogram(name: string, value: number, labels?: Record<string, string>): void {
     const metric = this.getOrCreateHistogram(name);
-    
+
     metric.values.push({
       value,
       timestamp: Date.now(),
-      labels
+      labels,
     });
 
     this.trimValues(metric.values);
@@ -71,7 +71,7 @@ export class SimpleMetricsCollector implements IMetricsCollector {
   recordGauge(name: string, value: number, labels?: Record<string, string>): void {
     const metric = this.getOrCreateGauge(name);
     const existingValue = this.findValue(metric.values, labels);
-    
+
     if (existingValue) {
       existingValue.value = value;
       existingValue.timestamp = Date.now();
@@ -79,7 +79,7 @@ export class SimpleMetricsCollector implements IMetricsCollector {
       metric.values.push({
         value,
         timestamp: Date.now(),
-        labels
+        labels,
       });
     }
 
@@ -89,7 +89,7 @@ export class SimpleMetricsCollector implements IMetricsCollector {
   async getMetrics(): Promise<any> {
     const metricsData: any = {
       timestamp: new Date().toISOString(),
-      metrics: {}
+      metrics: {},
     };
 
     for (const [name, metric] of this.metrics.entries()) {
@@ -127,7 +127,7 @@ export class SimpleMetricsCollector implements IMetricsCollector {
         name,
         help: `Counter metric: ${name}`,
         type: 'counter',
-        values: []
+        values: [],
       });
     }
     return this.metrics.get(name) as CounterMetric;
@@ -140,7 +140,7 @@ export class SimpleMetricsCollector implements IMetricsCollector {
         help: `Histogram metric: ${name}`,
         type: 'histogram',
         values: [],
-        buckets: [5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000]
+        buckets: [5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000],
       });
     }
     return this.metrics.get(name) as HistogramMetric;
@@ -152,28 +152,29 @@ export class SimpleMetricsCollector implements IMetricsCollector {
         name,
         help: `Gauge metric: ${name}`,
         type: 'gauge',
-        values: []
+        values: [],
       });
     }
     return this.metrics.get(name) as GaugeMetric;
   }
 
-  private findValue(values: MetricValue[], labels?: Record<string, string>): MetricValue | undefined {
-    return values.find(v => this.labelsMatch(v.labels, labels));
+  private findValue(
+    values: MetricValue[],
+    labels?: Record<string, string>
+  ): MetricValue | undefined {
+    return values.find((v) => this.labelsMatch(v.labels, labels));
   }
 
   private labelsMatch(labels1?: Record<string, string>, labels2?: Record<string, string>): boolean {
     if (!labels1 && !labels2) return true;
     if (!labels1 || !labels2) return false;
-    
+
     const keys1 = Object.keys(labels1).sort();
     const keys2 = Object.keys(labels2).sort();
-    
+
     if (keys1.length !== keys2.length) return false;
-    
-    return keys1.every((key, index) => 
-      key === keys2[index] && labels1[key] === labels2[key]
-    );
+
+    return keys1.every((key, index) => key === keys2[index] && labels1[key] === labels2[key]);
   }
 
   private trimValues(values: MetricValue[]): void {
@@ -188,7 +189,7 @@ export class SimpleMetricsCollector implements IMetricsCollector {
     return {
       type: 'counter',
       total,
-      values: metric.values.length
+      values: metric.values.length,
     };
   }
 
@@ -201,11 +202,11 @@ export class SimpleMetricsCollector implements IMetricsCollector {
         avg: 0,
         min: 0,
         max: 0,
-        buckets: {}
+        buckets: {},
       };
     }
 
-    const values = metric.values.map(v => v.value);
+    const values = metric.values.map((v) => v.value);
     const sum = values.reduce((a, b) => a + b, 0);
     const count = values.length;
     const avg = sum / count;
@@ -215,7 +216,7 @@ export class SimpleMetricsCollector implements IMetricsCollector {
     // Calculate bucket distribution
     const buckets: Record<string, number> = {};
     for (const bucket of metric.buckets) {
-      buckets[`le_${bucket}`] = values.filter(v => v <= bucket).length;
+      buckets[`le_${bucket}`] = values.filter((v) => v <= bucket).length;
     }
 
     return {
@@ -225,7 +226,7 @@ export class SimpleMetricsCollector implements IMetricsCollector {
       avg: Math.round(avg * 100) / 100,
       min,
       max,
-      buckets
+      buckets,
     };
   }
 
@@ -234,19 +235,19 @@ export class SimpleMetricsCollector implements IMetricsCollector {
       return {
         type: 'gauge',
         value: 0,
-        timestamp: null
+        timestamp: null,
       };
     }
 
     // Get the most recent value
-    const latest = metric.values.reduce((latest, current) => 
+    const latest = metric.values.reduce((latest, current) =>
       current.timestamp > latest.timestamp ? current : latest
     );
 
     return {
       type: 'gauge',
       value: latest.value,
-      timestamp: new Date(latest.timestamp).toISOString()
+      timestamp: new Date(latest.timestamp).toISOString(),
     };
   }
 
@@ -269,7 +270,7 @@ export class SimpleMetricsCollector implements IMetricsCollector {
     return setInterval(() => {
       const memUsage = process.memoryUsage();
       this.recordGauge('memory_usage_bytes', memUsage.heapUsed);
-      
+
       // CPU usage would require more complex calculation
       // For now, we'll just record a placeholder
       this.recordGauge('cpu_usage_percent', 0);
