@@ -135,11 +135,10 @@ describe('QR Code Generator API Integration Tests', () => {
         .post('/v1/create-qr-code')
         .send({ 
           data: 'colored test',
-          color: '#000000',  // Black
-          bgcolor: '#FFFFFF' // White - This has good contrast
-        });
-
-      expect(response.status).toBe(200);
+          color: '#000000',  // Black - good contrast with white
+          bgcolor: '#FFFFFF'  // White
+        })
+        .expect(response.status).toBe(200);
       expect(response.headers['content-type']).toContain('image/png');
       expect(response.body.length).toBeGreaterThan(0);
     });

@@ -39,12 +39,12 @@ export class ColorValue {
       return ColorValue.parseRGBString(colorInput);
     }
 
-    // Handle hex format without # prefix (auto-add #)
+
     if (/^[0-9a-fA-F]{3}$|^[0-9a-fA-F]{6}$/.test(colorInput)) {
       return ColorValue.parseHexColor('#' + colorInput);
     }
 
-    throw new Error(`Invalid color format: ${colorInput}. Use hex (#RRGGBB) or RGB (r-g-b) format`);
+    throw new Error(`Invalid color format: ${colorInput}. Use hex (#RRGGBB or RRGGBB) or RGB (r-g-b) format`);
   }
 
   private static parseHexColor(hex: string): RGBColor {
@@ -55,12 +55,22 @@ export class ColorValue {
       const r = parseInt(cleanHex[0] + cleanHex[0], 16);
       const g = parseInt(cleanHex[1] + cleanHex[1], 16);
       const b = parseInt(cleanHex[2] + cleanHex[2], 16);
+      
+      if (isNaN(r) || isNaN(g) || isNaN(b)) {
+        throw new Error(`Invalid hex color format: ${hex}`);
+      }
+      
       return { r, g, b };
     } else if (cleanHex.length === 6) {
       // Full hex format (#RRGGBB)
       const r = parseInt(cleanHex.substring(0, 2), 16);
       const g = parseInt(cleanHex.substring(2, 4), 16);
       const b = parseInt(cleanHex.substring(4, 6), 16);
+      
+      if (isNaN(r) || isNaN(g) || isNaN(b)) {
+        throw new Error(`Invalid hex color format: ${hex}`);
+      }
+      
       return { r, g, b };
     }
 
