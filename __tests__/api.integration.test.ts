@@ -90,8 +90,8 @@ describe('QR Code Generator API Integration Tests', () => {
       expect(response.body).toMatchObject({
         success: false,
         error: {
-          code: 'MISSING_REQUIRED_PARAMETER',
-          message: expect.stringContaining('data')
+          code: 'INVALID_REQUEST_STRUCTURE',
+          message: 'Request structure validation failed'
         }
       });
     });
@@ -138,19 +138,20 @@ describe('QR Code Generator API Integration Tests', () => {
           color: '#000000',  // Black - good contrast with white
           bgcolor: '#FFFFFF'  // White
         })
-        .expect(200);
-
+        .expect(response.status).toBe(200);
       expect(response.headers['content-type']).toContain('image/png');
       expect(response.body.length).toBeGreaterThan(0);
     });
 
-    it('should handle hex colors without # prefix', async () => {
+    it('should handle colors without # prefix (problem statement fix)', async () => {
+      // Test the exact case from the problem statement
       const response = await request(server)
-        .post('/v1/create-qr-code')
-        .send({ 
-          data: 'hex test without prefix',
-          color: '000000',    // Black without # prefix
-          bgcolor: 'FFFFFF'   // White without # prefix
+        .get('/v1/create-qr-code')
+        .query({
+          data: 'https://www.goqr.me',
+          size: '300x300',
+          color: '0066ff',
+          bgcolor: 'eeeeee'
         })
         .expect(200);
 
@@ -194,6 +195,31 @@ describe('QR Code Generator API Integration Tests', () => {
 
       expect(response2.headers['x-cache-status']).toBe('HIT');
       expect(time2).toBeLessThan(time1); // Cached request should be faster
+    });
+
+    it('should work with user-friendly /create-qr-code endpoint', async () => {
+      const response = await request(server)
+        .post('/create-qr-code')
+        .send({ data: 'Test user-friendly endpoint' })
+        .expect(200);
+
+      expect(response.headers['content-type']).toContain('image/png');
+      expect(response.headers['x-qr-code-id']).toBeDefined();
+      expect(response.body).toBeInstanceOf(Buffer);
+      expect(response.body.length).toBeGreaterThan(0);
+    });
+
+    it('should work with GET request on user-friendly endpoint', async () => {
+      const response = await request(server)
+        .get('/create-qr-code')
+        .query({ 
+          data: 'https://example.com/test',
+          size: '150x150'
+        })
+        .expect(200);
+
+      expect(response.headers['content-type']).toContain('image/png');
+      expect(response.body).toBeInstanceOf(Buffer);
     });
   });
 

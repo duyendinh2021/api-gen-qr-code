@@ -134,6 +134,9 @@ export class QRCodeController {
       qzone: source.qzone ? parseInt(source.qzone as string, 10) : undefined,
       'charset-source': source['charset-source'] as string,
       'charset-target': source['charset-target'] as string,
+      logo: source.logo as string,
+      logo_size: source.logo_size ? parseInt(source.logo_size as string, 10) : undefined,
+      logo_margin: source.logo_margin ? parseInt(source.logo_margin as string, 10) : undefined,
     };
   }
 

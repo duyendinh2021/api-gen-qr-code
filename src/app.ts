@@ -18,6 +18,9 @@ import { QRCodeController } from './infrastructure/adapters/controllers/QRCodeCo
 import { HealthController } from './infrastructure/adapters/controllers/HealthController';
 import { loadConfig, AppConfig } from './infrastructure/config/app.config';
 
+// Middleware imports
+import { ValidationMiddleware, LoggingMiddleware } from './middleware';
+
 // Shared imports
 import { AppError } from './shared/errors';
 
@@ -30,6 +33,10 @@ class QRCodeGeneratorApp {
   private metricsCollector!: SimpleMetricsCollector;
   private cacheRepository!: InMemoryCacheRepository;
   private qrCodeGenerator!: QRCodeJSAdapter;
+  
+  // Middleware
+  private validationMiddleware!: ValidationMiddleware;
+  private loggingMiddleware!: LoggingMiddleware;
   
   // Use Cases
   private validateParametersUseCase!: ValidateParametersUseCase;
@@ -45,9 +52,10 @@ class QRCodeGeneratorApp {
     this.app = express();
     
     this.initializeDependencies();
+    this.initializeMiddleware();
     this.initializeUseCases();
     this.initializeControllers();
-    this.initializeMiddleware();
+    this.initializeExpressMiddleware();
     this.initializeRoutes();
     this.initializeErrorHandling();
   }
@@ -101,6 +109,24 @@ class QRCodeGeneratorApp {
   }
 
   private initializeMiddleware(): void {
+    // Initialize custom middleware
+    this.validationMiddleware = new ValidationMiddleware({
+      logger: this.logger,
+      sanitizeInput: true,
+      maxRequestSize: 1024 * 1024, // 1MB
+    });
+    
+    this.loggingMiddleware = new LoggingMiddleware({
+      logger: this.logger,
+      includeBody: true,
+      includeHeaders: false,
+      maxBodySize: 1000,
+    });
+
+    this.logger.info('Custom middleware initialized');
+  }
+
+  private initializeExpressMiddleware(): void {
     // Security middleware
     if (this.config.security.helmet) {
       this.app.use(helmet());
@@ -123,6 +149,10 @@ class QRCodeGeneratorApp {
     this.app.use(express.json({ limit: '1mb' }));
     this.app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
+    // Enhanced logging middleware
+    this.app.use(this.loggingMiddleware.enhancedLogging());
+    this.app.use(this.loggingMiddleware.performanceMonitoring());
+
     // Request logging
     this.app.use(morgan('combined', {
       stream: {
@@ -139,7 +169,7 @@ class QRCodeGeneratorApp {
       next();
     });
 
-    this.logger.info('Middleware initialized');
+    this.logger.info('Express middleware initialized');
   }
 
   private initializeRoutes(): void {
@@ -160,10 +190,47 @@ class QRCodeGeneratorApp {
       }
     });
 
-    // QR Code generation routes
-    this.app.get('/v1/create-qr-code', this.qrCodeController.handleGet.bind(this.qrCodeController));
-    this.app.post('/v1/create-qr-code', this.qrCodeController.handlePost.bind(this.qrCodeController));
-    this.app.options('/v1/create-qr-code', this.qrCodeController.handleOptions.bind(this.qrCodeController));
+    // QR Code generation routes with validation middleware
+    const qrValidation = this.validationMiddleware.validateQRCodeRequest();
+    const rateLimit = this.validationMiddleware.rateLimit({
+      windowMs: 60 * 1000, // 1 minute
+      maxRequests: 100, // 100 requests per minute
+    });
+    const parameterLogging = this.loggingMiddleware.logParameterExtraction();
+
+    // V1 API routes (existing)
+    this.app.get('/v1/create-qr-code', 
+      rateLimit,
+      qrValidation,
+      parameterLogging,
+      this.qrCodeController.handleGet.bind(this.qrCodeController)
+    );
+    this.app.post('/v1/create-qr-code', 
+      rateLimit,
+      qrValidation,
+      parameterLogging,
+      this.qrCodeController.handlePost.bind(this.qrCodeController)
+    );
+    this.app.options('/v1/create-qr-code', 
+      this.qrCodeController.handleOptions.bind(this.qrCodeController)
+    );
+
+    // Compatibility routes (user-friendly endpoints)
+    this.app.get('/create-qr-code', 
+      rateLimit,
+      qrValidation,
+      parameterLogging,
+      this.qrCodeController.handleGet.bind(this.qrCodeController)
+    );
+    this.app.post('/create-qr-code', 
+      rateLimit,
+      qrValidation,
+      parameterLogging,
+      this.qrCodeController.handlePost.bind(this.qrCodeController)
+    );
+    this.app.options('/create-qr-code', 
+      this.qrCodeController.handleOptions.bind(this.qrCodeController)
+    );
 
     // Root route
     this.app.get('/', (req: Request, res: Response) => {
@@ -172,8 +239,10 @@ class QRCodeGeneratorApp {
         version: '1.0.0',
         description: 'RESTful QR Code Generator API with Clean Architecture',
         endpoints: {
-          'POST /v1/create-qr-code': 'Generate QR code',
-          'GET /v1/create-qr-code': 'Generate QR code (query params)',
+          'POST /v1/create-qr-code': 'Generate QR code (v1 API)',
+          'GET /v1/create-qr-code': 'Generate QR code with query params (v1 API)',
+          'POST /create-qr-code': 'Generate QR code (user-friendly)',
+          'GET /create-qr-code': 'Generate QR code with query params (user-friendly)',
           'GET /health': 'Health check',
           'GET /metrics': 'Prometheus metrics'
         }
